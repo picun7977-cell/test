@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Перенаправление в Incy</title>
+    <title>Перенаправление в INCY</title>
     <style>
         body {
             font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -12,7 +12,7 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f3f4f6;
+            background: #f3f4f6;
             color: #1f2937;
             text-align: center;
             padding: 20px;
@@ -22,12 +22,12 @@
             background: white;
             padding: 2rem;
             border-radius: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
             max-width: 90%;
             width: 400px;
         }
         button {
-            background-color: #0088cc;
+            background: #0088cc;
             color: white;
             border: none;
             padding: 12px 24px;
@@ -39,7 +39,7 @@
             width: 100%;
         }
         pre {
-            background-color: #f3f4f6;
+            background: #f3f4f6;
             padding: 12px;
             border-radius: 8px;
             overflow-x: auto;
@@ -48,48 +48,33 @@
             font-size: 12px;
             text-align: left;
         }
-        .link-text {
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        a {
-            color: #0088cc;
-            word-break: break-all;
-        }
+        .link-text { margin-top: 15px; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>🔄 Перенаправление в Incy</h2>
+        <h2>🔄 Перенаправление в INCY</h2>
         <div id="status">⏳ Загрузка...</div>
     </div>
 
     <script>
-        // Функция для получения параметров из URL
-        function getUrlParameter(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
-        }
-
-        // 1. Пытаемся выполнить перенаправление
-        const encodedKey = getUrlParameter('key');
-
+        const urlParams = new URLSearchParams(window.location.search);
+        const encodedKey = urlParams.get('key');
+        
         if (encodedKey) {
             try {
                 const redirectUrl = decodeURIComponent(encodedKey);
                 const statusDiv = document.getElementById('status');
                 
-                if (redirectUrl.startsWith('incv://')) {
-                    statusDiv.innerHTML = `✅ Перенаправление на <strong>Incy</strong>...<br><br>Если приложение не открылось, используйте кнопку ниже.`;
-                    
-                    // Способ 1: Прямое перенаправление (часто срабатывает в WebView)
+                // ПРАВИЛЬНАЯ СХЕМА — incy:// (не incv!)
+                if (redirectUrl.startsWith('incy://')) {
+                    statusDiv.innerHTML = `✅ Перенаправление в <strong>INCY</strong>...`;
                     window.location.href = redirectUrl;
                     
-                    // Таймаут на случай, если перенаправление не сработает
                     setTimeout(() => {
                         statusDiv.innerHTML = `
-                            ⚠️ Не удалось открыть Incy автоматически.<br><br>
-                            Пожалуйста, нажмите кнопку ниже, чтобы скопировать ссылку и открыть её вручную.
+                            ⚠️ Не удалось открыть INCY автоматически.<br><br>
+                            Нажмите кнопку, чтобы скопировать ссылку:
                             <div class="link-text">
                                 <pre>${redirectUrl}</pre>
                             </div>
@@ -97,28 +82,22 @@
                                 📋 Скопировать ссылку
                             </button>
                         `;
-                    }, 2000);
+                    }, 1500);
                 } else {
-                    statusDiv.innerHTML = `❌ Ошибка: Неверный формат ссылки.<br><br>Ссылка должна начинаться с <code>incv://</code>.`;
+                    statusDiv.innerHTML = `❌ Ошибка: ссылка должна начинаться с <code>incy://</code><br><br>Получено: ${redirectUrl.substring(0, 50)}...`;
                 }
-            } catch (e) {
-                document.getElementById('status').innerHTML = `❌ Ошибка при обработке ссылки: ${e.message}`;
+            } catch(e) {
+                document.getElementById('status').innerHTML = `❌ Ошибка: ${e.message}`;
             }
         } else {
-            // Если параметр key не передан
-            document.getElementById('status').innerHTML = `
-                ❌ Ошибка: Ключ для импорта не указан.<br><br>
-                Пожалуйста, используйте корректную ссылку для подключения.
-            `;
+            document.getElementById('status').innerHTML = `❌ Ошибка: ключ не указан.`;
         }
-
-        // Функция для копирования текста в буфер обмена
+        
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => {
-                alert('✅ Ссылка скопирована! Теперь вы можете вставить её в адресную строку браузера.');
-            }).catch(err => {
-                console.error('Ошибка копирования: ', err);
-                alert('❌ Не удалось скопировать ссылку вручную.');
+                alert('✅ Ссылка скопирована! Теперь вставьте её в адресную строку браузера.');
+            }).catch(() => {
+                alert('❌ Не удалось скопировать. Скопируйте вручную.');
             });
         }
     </script>
