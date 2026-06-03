@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Перенаправление в INCY</title>
+</head>
+<body>
+    <h2>🔄 Перенаправление в INCY...</h2>
+    <p>Если не открывается автоматически — скопируйте ссылку ниже и вставьте в браузер:</p>
+    <pre id="link"></pre>
+    <button onclick="copyLink()">📋 Копировать ссылку</button>
+    
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const key = urlParams.get('key');
+        
+        if (key) {
+            const decodedKey = decodeURIComponent(key);
+            document.getElementById('link').innerText = decodedKey;
+            window.location.href = decodedKey;
+        }
+        
+        function copyLink() {
+            const link = document.getElementById('link').innerText;
+            navigator.clipboard.writeText(link);
+            alert('Ссылка скопирована! Вставьте её в адресную строку браузера.');
+        }
+    </script>
+</body>
+</html>
