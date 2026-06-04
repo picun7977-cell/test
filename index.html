@@ -2,50 +2,118 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>INCY Redirect</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Перенаправление в INCY</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 2rem; }
-        button { background: #0088cc; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; }
-        pre { background: #f0f0f0; padding: 10px; border-radius: 6px; overflow-x: auto; }
+        body {
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: #f3f4f6;
+            color: #1f2937;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 400px;
+        }
+        button {
+            background: #0088cc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+            width: 100%;
+        }
+        pre {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            word-break: break-all;
+            white-space: pre-wrap;
+            font-size: 12px;
+            text-align: left;
+        }
+        .link-text { margin-top: 15px; font-size: 14px; }
+        .error { color: #dc2626; }
     </style>
 </head>
 <body>
-    <h2>Перенаправление в INCY</h2>
-    <div id="status">Загрузка...</div>
+    <div class="container">
+        <h2>🔄 Перенаправление в INCY</h2>
+        <div id="status">⏳ Загрузка...</div>
+    </div>
+
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const encodedKey = urlParams.get('key');
-        const encodedSub = urlParams.get('sub');
-        let providerName = urlParams.get('provider_name');
+        const encodedKey = urlParams.get('key');    // для /import
+        const encodedSub = urlParams.get('sub');    // для /add подписки
         
         let redirectUrl = null;
+        
         if (encodedKey) {
-            redirectUrl = decodeURIComponent(encodedKey);
-        } else if (encodedSub) {
-            let subUrl = decodeURIComponent(encodedSub);
-            let base = `incy://add/${encodeURIComponent(subUrl)}`;
-            if (providerName) {
-                base += `?provider_name=${encodeURIComponent(providerName)}`;
-                base += `#${encodeURIComponent(providerName)}`;
+            try {
+                redirectUrl = decodeURIComponent(encodedKey);
+                if (!redirectUrl.startsWith('incy://import/')) {
+                    throw new Error('Неверная схема для import');
+                }
+            } catch(e) {
+                document.getElementById('status').innerHTML = `<div class="error">❌ Ошибка ключа: ${e.message}</div>`;
             }
-            redirectUrl = base;
+        } else if (encodedSub) {
+            try {
+                const subUrl = decodeURIComponent(encodedSub);
+                // Проверяем, что это http:// или https:// (RAW ссылка)
+                if (!subUrl.startsWith('http://') && !subUrl.startsWith('https://')) {
+                    throw new Error('Неверный URL подписки');
+                }
+                redirectUrl = `incy://add/${encodeURIComponent(subUrl)}`;
+            } catch(e) {
+                document.getElementById('status').innerHTML = `<div class="error">❌ Ошибка подписки: ${e.message}</div>`;
+            }
+        } else {
+            document.getElementById('status').innerHTML = `<div class="error">❌ Ошибка: отсутствуют параметры key или sub.</div>`;
         }
+        
         if (redirectUrl) {
-            document.getElementById('status').innerHTML = '✅ Перенаправление...';
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `✅ Перенаправление в <strong>INCY</strong>...`;
             window.location.href = redirectUrl;
+            
             setTimeout(() => {
-                document.getElementById('status').innerHTML = `
-                    ⚠️ Не удалось открыть INCY автоматически.<br>
-                    <button onclick="copyToClipboard('${redirectUrl.replace(/'/g, "\\'")}')">Скопировать ссылку</button>
+                statusDiv.innerHTML = `
+                    ⚠️ Не удалось открыть INCY автоматически.<br><br>
+                    Нажмите кнопку, чтобы скопировать ссылку:
+                    <div class="link-text">
+                        <pre>${redirectUrl}</pre>
+                    </div>
+                    <button onclick="copyToClipboard('${redirectUrl.replace(/'/g, "\\'")}')">
+                        📋 Скопировать ссылку
+                    </button>
                 `;
             }, 1500);
-        } else {
-            document.getElementById('status').innerHTML = '❌ Ошибка: отсутствуют параметры key или sub.';
         }
+        
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text);
-            alert('Ссылка скопирована!');
+            navigator.clipboard.writeText(text).then(() => {
+                alert('✅ Ссылка скопирована! Теперь вставьте её в адресную строку браузера.');
+            }).catch(() => {
+                alert('❌ Не удалось скопировать. Скопируйте вручную.');
+            });
         }
     </script>
 </body>
