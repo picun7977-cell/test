@@ -49,6 +49,7 @@
             text-align: left;
         }
         .link-text { margin-top: 15px; font-size: 14px; }
+        .error { color: #dc2626; }
     </style>
 </head>
 <body>
@@ -59,38 +60,52 @@
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const encodedKey = urlParams.get('key');
+        const encodedKey = urlParams.get('key');    // для /import
+        const encodedSub = urlParams.get('sub');    // для /add подписки
+        
+        let redirectUrl = null;
         
         if (encodedKey) {
             try {
-                const redirectUrl = decodeURIComponent(encodedKey);
-                const statusDiv = document.getElementById('status');
-                
-                // ПРАВИЛЬНАЯ СХЕМА — incy:// (не incv!)
-                if (redirectUrl.startsWith('incy://')) {
-                    statusDiv.innerHTML = `✅ Перенаправление в <strong>INCY</strong>...`;
-                    window.location.href = redirectUrl;
-                    
-                    setTimeout(() => {
-                        statusDiv.innerHTML = `
-                            ⚠️ Не удалось открыть INCY автоматически.<br><br>
-                            Нажмите кнопку, чтобы скопировать ссылку:
-                            <div class="link-text">
-                                <pre>${redirectUrl}</pre>
-                            </div>
-                            <button onclick="copyToClipboard('${redirectUrl.replace(/'/g, "\\'")}')">
-                                📋 Скопировать ссылку
-                            </button>
-                        `;
-                    }, 1500);
-                } else {
-                    statusDiv.innerHTML = `❌ Ошибка: ссылка должна начинаться с <code>incy://</code><br><br>Получено: ${redirectUrl.substring(0, 50)}...`;
+                redirectUrl = decodeURIComponent(encodedKey);
+                if (!redirectUrl.startsWith('incy://import/')) {
+                    throw new Error('Неверная схема для import');
                 }
             } catch(e) {
-                document.getElementById('status').innerHTML = `❌ Ошибка: ${e.message}`;
+                document.getElementById('status').innerHTML = `<div class="error">❌ Ошибка ключа: ${e.message}</div>`;
+            }
+        } else if (encodedSub) {
+            try {
+                const subUrl = decodeURIComponent(encodedSub);
+                // Проверяем, что это http:// или https:// (RAW ссылка)
+                if (!subUrl.startsWith('http://') && !subUrl.startsWith('https://')) {
+                    throw new Error('Неверный URL подписки');
+                }
+                redirectUrl = `incy://add/${encodeURIComponent(subUrl)}`;
+            } catch(e) {
+                document.getElementById('status').innerHTML = `<div class="error">❌ Ошибка подписки: ${e.message}</div>`;
             }
         } else {
-            document.getElementById('status').innerHTML = `❌ Ошибка: ключ не указан.`;
+            document.getElementById('status').innerHTML = `<div class="error">❌ Ошибка: отсутствуют параметры key или sub.</div>`;
+        }
+        
+        if (redirectUrl) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `✅ Перенаправление в <strong>INCY</strong>...`;
+            window.location.href = redirectUrl;
+            
+            setTimeout(() => {
+                statusDiv.innerHTML = `
+                    ⚠️ Не удалось открыть INCY автоматически.<br><br>
+                    Нажмите кнопку, чтобы скопировать ссылку:
+                    <div class="link-text">
+                        <pre>${redirectUrl}</pre>
+                    </div>
+                    <button onclick="copyToClipboard('${redirectUrl.replace(/'/g, "\\'")}')">
+                        📋 Скопировать ссылку
+                    </button>
+                `;
+            }, 1500);
         }
         
         function copyToClipboard(text) {
